@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Territory Runner</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0f0f1e;
+      color: #fff;
+      font-family: 'Arial', sans-serif;
+      overflow-x: hidden;
+    }
+    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 0;
+      border-bottom: 2px solid #00ff88;
+      margin-bottom: 40px;
+    }
+    h1 { color: #00ff88; font-size: 2.5em; }
+    .nav-buttons { display: flex; gap: 15px; }
+    button {
+      background: #00ff88;
+      color: #0f0f1e;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+    }
+    button:hover { background: #00dd66; transform: scale(1.05); }
+    .game-map {
+      width: 100%;
+      height: 500px;
+      background: radial-gradient(circle at 20% 30%, #1a1a2e 0%, #0f0f1e 100%);
+      border: 2px solid #00ff88;
+      border-radius: 10px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 40px;
+    }
+    .territory { position: absolute; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; transition: all 0.3s; }
+    .territory:hover { transform: scale(1.15); }
+    .territory.player1 { background: radial-gradient(circle, #00ff88, #00aa55); border: 2px solid #00ff88; }
+    .territory.player2 { background: radial-gradient(circle, #ff0066, #cc0055); border: 2px solid #ff0066; }
+    .territory.neutral { background: radial-gradient(circle, #444466, #222233); border: 2px solid #666688; }
+    .stats-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+    .stats-box {
+      background: #1a1a2e;
+      border: 2px solid #00ff88;
+      padding: 20px;
+      border-radius: 10px;
+    }
+    .stat-item { display: flex; justify-content: space-between; margin: 10px 0; padding: 10px; background: #0f0f1e; border-radius: 5px; }
+    .achievements {
+      background: #1a1a2e;
+      border: 2px solid #00ff88;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 40px;
+    }
+    .achievement-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 15px; }
+    .achievement {
+      background: #0f0f1e;
+      border: 2px solid #00ff88;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+      transition: all 0.3s;
+    }
+    .achievement:hover { background: #00ff88; color: #0f0f1e; }
+    .leaderboard {
+      background: #1a1a2e;
+      border: 2px solid #00ff88;
+      padding: 20px;
+      border-radius: 10px;
+    }
+    .leaderboard-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #00ff88; }
+    .leaderboard-item:last-child { border-bottom: none; }
+    .rank { font-weight: bold; color: #00ff88; min-width: 30px; }
+    .score { color: #ff0066; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎮 Territory Runner</h1>
+      <div class="nav-buttons">
+        <button onclick="startGame()">New Game</button>
+        <button onclick="togglePause()">Pause</button>
+        <button onclick="resetStats()">Reset</button>
+      </div>
+    </header>
+
+    <div class="game-map" id="gameMap"></div>
+
+    <div class="stats-container">
+      <div class="stats-box">
+        <h2 style="color: #00ff88; margin-bottom: 15px;">📊 Your Stats</h2>
+        <div class="stat-item"><span>Territory Captured:</span><span id="territory">0</span></div>
+        <div class="stat-item"><span>Score:</span><span id="score">0</span></div>
+        <div class="stat-item"><span>Level:</span><span id="level">1</span></div>
+        <div class="stat-item"><span>Multiplier:</span><span id="multiplier">1.0x</span></div>
+      </div>
+      <div class="stats-box">
+        <h2 style="color: #ff0066; margin-bottom: 15px;">🏆 Achievements</h2>
+        <div class="stat-item"><span>Total Unlocked:</span><span id="achievements">0</span></div>
+        <div class="stat-item"><span>Streak:</span><span id="streak">0</span></div>
+        <div class="stat-item"><span>Play Time:</span><span id="playtime">0m</span></div>
+        <div class="stat-item"><span>Rank:</span><span id="rank">Bronze</span></div>
+      </div>
+    </div>
+
+    <div class="achievements">
+      <h2 style="color: #00ff88;">🌟 Achievements</h2>
+      <div class="achievement-list">
+        <div class="achievement" title="Capture 10 territories">🎯 First Blood</div>
+        <div class="achievement" title="Reach 1000 points">💰 Rich Legend</div>
+        <div class="achievement" title="10 winning streak">🔥 Dominator</div>
+        <div class="achievement" title="Play 1 hour">⏱️ Dedicated</div>
+        <div class="achievement" title="Capture all territories">👑 Emperor</div>
+        <div class="achievement" title="Reach top 10">🏅 Elite Player</div>
+      </div>
+    </div>
+
+    <div class="leaderboard">
+      <h2 style="color: #00ff88; margin-bottom: 15px;">📈 Global Leaderboard</h2>
+      <div class="leaderboard-item">
+        <span class="rank">#1</span>
+        <span>ShadowNinja</span>
+        <span class="score">52,430</span>
+      </div>
+      <div class="leaderboard-item">
+        <span class="rank">#2</span>
+        <span>VortexMaster</span>
+        <span class="score">48,950</span>
+      </div>
+      <div class="leaderboard-item">
+        <span class="rank">#3</span>
+        <span>EchoKing</span>
+        <span class="score">47,280</span>
+      </div>
+      <div class="leaderboard-item">
+        <span class="rank">#4</span>
+        <span>PhoenixRiser</span>
+        <span class="score">45,600</span>
+      </div>
+      <div class="leaderboard-item">
+        <span class="rank">#5</span>
+        <span>NovaMancer</span>
+        <span class="score">43,500</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let gameState = {
+      territories: 0,
+      score: 0,
+      level: 1,
+      multiplier: 1.0,
+      achievements: 0,
+      streak: 0,
+      playtime: 0,
+      isPaused: false
+    };
+
+    function createTerritories() {
+      const mapEl = document.getElementById('gameMap');
+      mapEl.innerHTML = '';
+      
+      for (let i = 0; i < 12 + gameState.level * 2; i++) {
+        const territory = document.createElement('div');
+        territory.className = 'territory';
+        const size = 40 + Math.random() * 30;
+        const type = ['player1', 'player2', 'neutral'][Math.floor(Math.random() * 3)];
+        territory.classList.add(type);
+        territory.style.width = size + 'px';
+        territory.style.height = size + 'px';
+        territory.style.left = Math.random() * (mapEl.clientWidth - size) + 'px';
+        territory.style.top = Math.random() * (mapEl.clientHeight - size) + 'px';
+        territory.textContent = Math.floor(Math.random() * 100) + 1;
+        
+        territory.onclick = () => captureTerritory();
+        mapEl.appendChild(territory);
+      }
+    }
+
+    function captureTerritory() {
+      if (gameState.isPaused) return;
+      gameState.territories++;
+      gameState.score += Math.floor(100 * gameState.multiplier);
+      gameState.streak++;
+      
+      if (gameState.territories % 10 === 0) {
+        gameState.level++;
+        gameState.multiplier += 0.5;
+        createTerritories();
+      }
+      
+      updateUI();
+    }
+
+    function updateUI() {
+      document.getElementById('territory').textContent = gameState.territories;
+      document.getElementById('score').textContent = gameState.score;
+      document.getElementById('level').textContent = gameState.level;
+      document.getElementById('multiplier').textContent = gameState.multiplier.toFixed(1) + 'x';
+      document.getElementById('achievements').textContent = Math.floor(gameState.territories / 5);
+      document.getElementById('streak').textContent = gameState.streak;
+      document.getElementById('rank').textContent = gameState.score > 10000 ? 'Gold' : gameState.score > 5000 ? 'Silver' : 'Bronze';
+    }
+
+    function startGame() {
+      gameState = { territories: 0, score: 0, level: 1, multiplier: 1.0, achievements: 0, streak: 0, playtime: 0, isPaused: false };
+      createTerritories();
+      updateUI();
+    }
+
+    function togglePause() {
+      gameState.isPaused = !gameState.isPaused;
+      alert(gameState.isPaused ? 'Game Paused' : 'Game Resumed');
+    }
+
+    function resetStats() {
+      gameState = { territories: 0, score: 0, level: 1, multiplier: 1.0, achievements: 0, streak: 0, playtime: 0, isPaused: false };
+      updateUI();
+      createTerritories();
+    }
+
+    // Initialize game
+    startGame();
+    setInterval(() => { if (!gameState.isPaused) { gameState.playtime++; document.getElementById('playtime').textContent = Math.floor(gameState.playtime / 60) + 'm'; } }, 1000);
+  </script>
+</body>
+</html>
